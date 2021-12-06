@@ -21,6 +21,7 @@ pip install -r requirements.txt
 
 if you use this program you have to install `Requirement Software`
 
-```
-command..
-```
+## Sample 1 : starbucks to buggerking
+
+## Sample 2 : sprite to buggerking
+
