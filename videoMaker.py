@@ -20,8 +20,12 @@ yolo_folder = os.path.join(root_folder, "yolov5")
 result_images = os.path.join(root_folder, "result_images")
 main_video = f"{root_folder}/main.mp4"
 
+## mkdir res, result_images
+if (os.path.exists(result_folder)): os.mkdir(result_folder)
+if (os.path.exists(result_images)): os.mkdir(result_images)
+
 ## 1. video frame extraction
-# video.getFrame(main_video, result_folder)
+video.getFrame(main_video, result_folder)
 
 ## 2. images detect & create x1y1x2y2
 #### 2.1. model load
@@ -30,7 +34,7 @@ model = torch.hub.load(f'{yolo_folder}',
                        path=f'{model_folder}/best.pt',
                        source='local',
                        force_reload=True)  # local repo
-model.conf = 0.88
+model.conf = 0.8
 
 #### 2.2. image read & sort
 ext = "jpg"
@@ -38,7 +42,7 @@ files = os.listdir(result_folder)
 files = [int(file.split(".")[0]) for file in files]
 files.sort()
 
-logo = cv2.imread(f"{root_folder}/logo.png", cv2.IMREAD_UNCHANGED)
+logo = cv2.imread(f"{root_folder}/main_logo.png", cv2.IMREAD_UNCHANGED)
 #### 2.3. create labels & creat result
 for file in files:
     rimg = cv2.imread(f"{result_folder}/{file}.{ext}")
@@ -48,23 +52,21 @@ for file in files:
     for d in results.xyxy[0].tolist():
         x1, y1, x2, y2, _, __, = d
         resultLabel.append([int(x1), int(y1), int(x2), int(y2)])
-    print(resultLabel)
-    if (len(resultLabel) == 0):
-        continue
-    mask = video.mask(resultLabel, rimg.shape)
-    print(oimg.shape, mask.shape)
-    ## inpainting
-    dst = cv2.inpaint(oimg, mask, 3, cv2.INPAINT_NS)
-    ## add new logo
-    for rl in resultLabel:
-        x1, y1, x2, y2 = rl
-        width = x2 - x1
-        height = y2 - y1
-        res = cv2.resize(logo,
-                         dsize=(width, height),
-                         interpolation=cv2.INTER_CUBIC)
-        dst = video.logoOverlay(dst, res, x=x1, y=y1)
+    if (len(resultLabel) != 0):
+        mask = video.mask(resultLabel, rimg.shape)
+        print(oimg.shape, mask.shape)
+        dst = cv2.inpaint(oimg, mask, 3, cv2.INPAINT_NS)
+        for rl in resultLabel:
+            x1, y1, x2, y2 = rl
+            width = x2 - x1
+            height = y2 - y1
+            res = cv2.resize(logo,
+                             dsize=(width, height),
+                             interpolation=cv2.INTER_CUBIC)
+            dst = video.logoOverlay(dst, res, x=x1, y=y1)
         cv2.imwrite(f'{result_images}/{file}.jpg', dst)
+    else:
+        cv2.imwrite(f'{result_images}/{file}.jpg', oimg)
 ## END: video create
 files = os.listdir(result_images)
 frame = []
